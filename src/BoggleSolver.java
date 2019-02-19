@@ -2,8 +2,7 @@ import edu.princeton.cs.algs4.SET;
 
 public class BoggleSolver
 {
-   private static final int prefixCutOffDepth = 6;
-  private static final int scoreDepth = 3;
+  private static final int minValidLength = 3;
   private static final char QChar = 'Q';
   private static final String QStr = "QU";
 
@@ -95,57 +94,51 @@ public class BoggleSolver
   // this call is to handle the neighbors of point at (rowIndex, colIndex)
   // depth should be equal to the length of prefix
   private void searchWord(BoggleBoard board, int rowIndex, int colIndex, boolean[][] onStack, SET<String> words,
-                          StringBuilder prefix, int depth, ModifiedTrieSET withPrefix)
+                          StringBuilder prefix, int depth, ModifiedTrieSET.Node node)
   {
     if (depth > maxWordLength) return;
-    if (depth >= prefixCutOffDepth)
-    {
-      withPrefix = new ModifiedTrieSET();
-      for (String keyWithPrefix : trieSET.keysWithPrefix(prefix.toString()))
-      {
-        withPrefix.add(keyWithPrefix);
-      }
-      if (withPrefix.isEmpty()) return;
-    }
+
+    node = trieSET.getNode(prefix.toString());
+    if (node == null) return;
 
     if (colIndex < (board.cols() - 1)) // we can go right
     {
-      searchWordImpl(board, rowIndex, colIndex+1, onStack, words, prefix, depth, withPrefix);
+      searchWordImpl(board, rowIndex, colIndex+1, onStack, words, prefix, depth, node);
 
       if (rowIndex < (board.rows() - 1)) // we can go right down
       {
-        searchWordImpl(board, rowIndex+1, colIndex+1, onStack, words, prefix, depth, withPrefix);
+        searchWordImpl(board, rowIndex+1, colIndex+1, onStack, words, prefix, depth, node);
       }
 
       if (rowIndex > 0) // we can go right up
       {
-        searchWordImpl(board, rowIndex-1, colIndex+1, onStack, words, prefix, depth, withPrefix);
+        searchWordImpl(board, rowIndex-1, colIndex+1, onStack, words, prefix, depth, node);
       }
     }
 
     if (colIndex > 0) // we can go left
     {
-      searchWordImpl(board, rowIndex, colIndex-1, onStack, words, prefix, depth, withPrefix);
+      searchWordImpl(board, rowIndex, colIndex-1, onStack, words, prefix, depth, node);
 
       if (rowIndex < (board.rows() - 1)) // we can go left down
       {
-        searchWordImpl(board, rowIndex+1, colIndex-1, onStack, words, prefix, depth, withPrefix);
+        searchWordImpl(board, rowIndex+1, colIndex-1, onStack, words, prefix, depth, node);
       }
 
       if (rowIndex > 0) // we can go left up
       {
-        searchWordImpl(board, rowIndex-1, colIndex-1, onStack, words, prefix, depth, withPrefix);
+        searchWordImpl(board, rowIndex-1, colIndex-1, onStack, words, prefix, depth, node);
       }
     }
 
     if (rowIndex > 0) // we can go up
     {
-      searchWordImpl(board, rowIndex-1, colIndex, onStack, words, prefix, depth, withPrefix);
+      searchWordImpl(board, rowIndex-1, colIndex, onStack, words, prefix, depth, node);
     }
 
     if (rowIndex < (board.rows()-1)) // we can go down
     {
-      searchWordImpl(board, rowIndex+1, colIndex, onStack, words, prefix, depth, withPrefix);
+      searchWordImpl(board, rowIndex+1, colIndex, onStack, words, prefix, depth, node);
     }
   }
 
@@ -153,13 +146,15 @@ public class BoggleSolver
   // searchWord finds the neighbor (and hence updates rowIndex, colIndex)
   // then calls searchWordImpl
   private void searchWordImpl(BoggleBoard board, int rowIndex, int colIndex, boolean[][] onStack, SET<String> words,
-                              StringBuilder prefix, int depth, ModifiedTrieSET withPrefix)
+                              StringBuilder prefix, int depth, ModifiedTrieSET.Node node)
   {
     if (onStack[rowIndex][colIndex]) return;
 
     // this needs to be reverted in the end
-    onStack[rowIndex][colIndex] = true;
     char c = board.getLetter(rowIndex, colIndex);
+    if (node.getNode(c) == null) return;
+
+    onStack[rowIndex][colIndex] = true;
     if (c == QChar)
     {
       prefix.append(QStr);
@@ -172,18 +167,16 @@ public class BoggleSolver
     }
 
     // actual operation
-    if (depth >= scoreDepth)
+    if (depth >= minValidLength)
     {
-      ModifiedTrieSET wordsSource = ((withPrefix != null) ? withPrefix : trieSET);
-
       String prefixStr = prefix.toString();
-      if(wordsSource.contains(prefixStr))
+      if(trieSET.contains(prefixStr))
       {
         words.add(prefixStr);
       }
     }
 
-    searchWord(board, rowIndex, colIndex, onStack, words, prefix, depth, withPrefix);
+    searchWord(board, rowIndex, colIndex, onStack, words, prefix, depth, node);
 
     // clean up
     onStack[rowIndex][colIndex] = false;

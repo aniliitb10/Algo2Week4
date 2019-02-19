@@ -9,15 +9,31 @@ public class ModifiedTrieSET implements Iterable<String> {
   private int n;          // number of keys in trie
 
   // R-way trie node
-  private static class Node {
-    private Node[] next = new Node[R];
-    private boolean isString;
+  class Node {
+    Node[] next = new Node[R];
+    boolean isString;
+
+    Node(){}
+
+    // Copy constructor
+    Node (Node node)
+    {
+      System.arraycopy(node.next, 0, this.next, 0, node.next.length);
+      this.isString = node.isString;
+    }
+
+    Node getNode(int index)
+    {
+      return this.next[index - ReduceBy];
+    }
   }
 
   /**
    * Initializes an empty set of strings.
    */
-  public ModifiedTrieSET() {
+  public ModifiedTrieSET()
+  {
+    root = new Node();
   }
 
   /**
@@ -32,6 +48,13 @@ public class ModifiedTrieSET implements Iterable<String> {
     Node x = get(root, key, 0);
     if (x == null) return false;
     return x.isString;
+  }
+
+  /* Just for BoggleSolver */
+  Node getNode(String key)
+  {
+    Node node = get(root, key, 0);
+    return (node == null) ? null : new Node(node);
   }
 
   private Node get(Node x, String key, int d) {
